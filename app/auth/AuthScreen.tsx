@@ -50,25 +50,27 @@ export default function AuthScreen() {
   }
 
   async function handleSignUp() {
-    //if (!validate()) return
+    if (!validate()) return
 
     setLoading(true)
     setError(null)
-    const { data, error: signUpError } = await supabase.auth.signUp({ email, password })
+    const { data, error } = await supabase.auth.signUp({ email, password })
 
-    if (!signUpError && data) {
-      const { error: insertError } = await supabase
-        .from('profiles')
-        .insert([{ id: data.user?.id, email: data.user?.email }])
-
-      if (insertError) {
-        setError(insertError.message)
-      }
-    }
-    if (signUpError) {
-      setError(signUpError.message)
+    if (error) {
+      setError(error.message)
     } else {
-      router.replace('/auth/signin')
+      const user = data.user
+      if (user) {
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert([{ id: user.id, email: user.email, created_at: new Date() }])
+
+        if (insertError) {
+          setError(insertError.message)
+        } else {
+          router.push('/home')
+        }
+      }
     }
     setLoading(false)
   }
@@ -88,23 +90,6 @@ export default function AuthScreen() {
         style={styles.container}
       >
         <Text style={styles.title}>Welcome</Text>
-
-        <View style={styles.switchRow}>
-          <Switch
-            value={goHome}
-            onValueChange={handleToggle}
-            thumbColor={goHome ? '#fff' : '#ccc'}
-            trackColor={{ false: '#555', true: '#2563EB' }}
-          />
-        </View>
-
-        <TouchableOpacity
-          style={styles.button}
-          activeOpacity={0.8}
-          onPress={() => router.push('/home')}
-        >
-          <Text style={styles.buttonText}>Go Home</Text>
-        </TouchableOpacity>
 
         <View style={styles.inputContainer}>
           <Text style={[styles.label, email ? styles.labelFocused : {}]}>Email</Text>

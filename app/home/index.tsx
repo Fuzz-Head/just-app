@@ -20,7 +20,7 @@ export default function Home() {
       </TouchableOpacity>
 
       <TouchableOpacity
-        onPress={() => router.replace('/auth/AuthScreen')}
+        onPress={() => router.replace('/auth/signin')}
         style={[styles.button, styles.secondary]}
         activeOpacity={0.8}
       >
