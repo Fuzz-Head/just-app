@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { View, TextInput, Button, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions, KeyboardAvoidingView, Platform, } from 'react-native'
+import { View, TextInput, Button, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions, KeyboardAvoidingView, Platform, Switch } from 'react-native'
 import { supabase } from '../../supabaseClient'
 import { FontAwesome, AntDesign, Feather } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -12,6 +12,8 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export default function AuthScreen() {
   const router = useRouter()
+  // test remove later 
+  const [goHome, setGoHome] = useState(false)
 
   const [email, setEmail] = useState<string>('')
   const [password, setPassword] = useState<string>('')
@@ -21,6 +23,13 @@ export default function AuthScreen() {
   const [showPassword, setShowPassword] = useState<boolean>(false)
   const [emailError, setEmailError] = useState<string | null>(null)
   const [passwordError, setPasswordError] = useState<string | null>(null)
+
+  function handleToggle() {
+    setGoHome(!goHome)
+    if (!goHome) {
+      router.push('/home')
+    }
+  }
 
   function validate() {
     let valid = true
@@ -40,16 +49,26 @@ export default function AuthScreen() {
     return valid
   }
 
-  async function handleSignIn() {
-    if (!validate()) return
+  async function handleSignUp() {
+    //if (!validate()) return
 
     setLoading(true)
     setError(null)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      setError(error.message)
+    const { data, error: signUpError } = await supabase.auth.signUp({ email, password })
+
+    if (!signUpError && data) {
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert([{ id: data.user?.id, email: data.user?.email }])
+
+      if (insertError) {
+        setError(insertError.message)
+      }
+    }
+    if (signUpError) {
+      setError(signUpError.message)
     } else {
-      router.replace('home')
+      router.replace('/auth/signin')
     }
     setLoading(false)
   }
@@ -68,7 +87,24 @@ export default function AuthScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
       >
-        <Text style={styles.title}>Welcome Back</Text>
+        <Text style={styles.title}>Welcome</Text>
+
+        <View style={styles.switchRow}>
+          <Switch
+            value={goHome}
+            onValueChange={handleToggle}
+            thumbColor={goHome ? '#fff' : '#ccc'}
+            trackColor={{ false: '#555', true: '#2563EB' }}
+          />
+        </View>
+
+        <TouchableOpacity
+          style={styles.button}
+          activeOpacity={0.8}
+          onPress={() => router.push('/home')}
+        >
+          <Text style={styles.buttonText}>Go Home</Text>
+        </TouchableOpacity>
 
         <View style={styles.inputContainer}>
           <Text style={[styles.label, email ? styles.labelFocused : {}]}>Email</Text>
@@ -111,14 +147,14 @@ export default function AuthScreen() {
         <TouchableOpacity
           style={[styles.button, loading ? styles.buttonDisabled : undefined]}
           disabled={loading}
-          onPress={handleSignIn}
+          onPress={handleSignUp}
           activeOpacity={0.8}
         >
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Sign In</Text>}
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Sign Up</Text>}
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => router.push('auth/signup')} style={styles.signupContainer}>
-          <Text style={styles.signupText}>Don't have an account? <Text style={styles.signupLink}>Sign Up</Text></Text>
+        <TouchableOpacity onPress={() => router.push('/auth/signin')} style={styles.signupContainer}>
+          <Text style={styles.signupText}>Already have an account? <Text style={styles.signupLink}>Sign In</Text></Text>
         </TouchableOpacity>
 
         <Text style={styles.orText}>OR</Text>
@@ -145,7 +181,7 @@ export default function AuthScreen() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </LinearGradient>
+    </LinearGradient >
   )
 }
 
@@ -278,5 +314,26 @@ export const styles = StyleSheet.create({
     color: '#d1d5db',
     fontWeight: '700',
     textDecorationLine: 'underline',
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: '85%',
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    marginBottom: 40,
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 10,
+    padding: 16,
+    width: '80%',
+    marginBottom: 40,
   },
 })

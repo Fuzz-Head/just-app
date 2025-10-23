@@ -3,6 +3,18 @@
     "name": "just-app",
     "slug": "just-app",
     "version": "1.0.0",
+    "splash":{
+      "image": "path-to-image",
+      "resizeMode": "contain",
+      "backgroundColor": "#fff",
+      "android": {
+        "image": "",
+        "mdpi": ""
+      },
+      "ios":{
+        "image":"path-to-image"
+      }
+    },
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "justapp",
